@@ -15,6 +15,8 @@ local DONE = 0
 local RUNNING = 1
 local state = DONE
 
+local already_notified_end = false
+
 --- The default options
 local DEFAULT_OPTIONS = {
     work_time = 25,
@@ -25,7 +27,9 @@ local DEFAULT_OPTIONS = {
         on_work_complete = "TIME IS UP!",
         status_icon = "羽",
         timer_format = '!%0M:%0S' -- To include hours: '!%0H:%0M:%0S'
-    }
+    },
+    on_work_complete = function() end,
+    on_break_complete = function() end
 }
 
 -- Local functions
@@ -45,6 +49,7 @@ end
 local function start(minutes)
     start_time = os.time()
     total_minutes = minutes
+    already_notified_end = false
     state = RUNNING
 end
 
@@ -62,9 +67,19 @@ function nomodoro.status()
     local status_string = ""
     if state == RUNNING then
         if time_remaining_seconds(total_minutes, start_time) <= 0 then
-            status_string = vim.g.nomodoro.texts.on_break_complete
             if is_work_time(total_minutes) then
                 status_string = vim.g.nomodoro.texts.on_work_complete
+                if not already_notified_end then
+                    vim.g.nomodoro.on_work_complete()
+                    already_notified_end = true
+                end
+            else
+                status_string = vim.g.nomodoro.texts.on_break_complete
+                if not already_notified_end then
+                    vim.g.nomodoro.on_break_complete()
+                    already_notified_end = true
+                end
+
             end
         else
             status_string = vim.g.nomodoro.texts.status_icon .. time_remaining(total_minutes, start_time)
