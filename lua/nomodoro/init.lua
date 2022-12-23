@@ -46,16 +46,17 @@ local function is_work_time(duration)
     return duration == vim.g.nomodoro.work_time
 end
 
-local function start(minutes)
+-- Plugin functions
+
+local nomodoro = {}
+
+function nomodoro.start(minutes)
     start_time = os.time()
     total_minutes = minutes
     already_notified_end = false
     state = RUNNING
 end
 
--- Plugin functions
-
-local nomodoro = {}
 
 function nomodoro.setup(options)
     local new_config = vim.tbl_deep_extend('force', DEFAULT_OPTIONS, options)
@@ -99,11 +100,11 @@ end
 -- Expose commands
 
 command("NomoWork", function ()
-	start(vim.g.nomodoro.work_time)
+	nomodoro.start(vim.g.nomodoro.work_time)
 end, {})
 
 command("NomoBreak", function ()
-    start(vim.g.nomodoro.break_time)
+    nomodoro.start(vim.g.nomodoro.break_time)
 end, {})
 
 command("NomoStop", function ()
@@ -115,7 +116,7 @@ command("NomoStatus", function ()
 end, {})
 
 command("NomoTimer", function (opts)
-    start(opts.args)
+    nomodoro.start(opts.args)
 end, {nargs = 1})
 
 if menu.has_dependencies then

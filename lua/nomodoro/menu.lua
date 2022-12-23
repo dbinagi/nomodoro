@@ -59,9 +59,9 @@ local function show(nomodoro)
         on_close = on_close,
         on_submit = function(item)
             if item.text == 'Start Work' then
-                start(vim.g.nomodoro.work_time)
+                nomodoro.start(vim.g.nomodoro.work_time)
             elseif item.text == 'Start Break' then
-                start(vim.g.nomodoro.break_time)
+                nomodoro.start(vim.g.nomodoro.break_time)
             elseif item.text == 'Stop' then
                 nomodoro.stop()
             end
