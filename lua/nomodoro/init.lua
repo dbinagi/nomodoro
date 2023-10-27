@@ -17,15 +17,19 @@ local state = DONE
 
 local already_notified_end = false
 
+vim.g.break_count = 0
+
 --- The default options
 local DEFAULT_OPTIONS = {
     work_time = 25,
-    break_time = 5,
+    short_break_time = 5,
+    long_break_time = 15,
+    break_cycle = 4,
     menu_available = true,
     texts = {
         on_break_complete = "TIME IS UP!",
         on_work_complete = "TIME IS UP!",
-        status_icon = "羽",
+        status_icon = "🍅 ",
         timer_format = '!%0M:%0S' -- To include hours: '!%0H:%0M:%0S'
     },
     on_work_complete = function() end,
@@ -48,7 +52,8 @@ end
 
 -- Plugin functions
 
-local nomodoro = {}
+local nomodoro = {
+}
 
 function nomodoro.start(minutes)
     start_time = os.time()
@@ -57,6 +62,17 @@ function nomodoro.start(minutes)
     state = RUNNING
 end
 
+function nomodoro.start_break()
+    if nomodoro.is_short_break() then
+        nomodoro.start(vim.g.nomodoro.short_break_time)
+    else
+        nomodoro.start(vim.g.nomodoro.long_break_time)
+    end
+end
+
+function nomodoro.is_short_break()
+    return vim.g.break_count % vim.g.nomodoro.break_cycle ~= 0 or vim.g.break_count == 0
+end
 
 function nomodoro.setup(options)
     local new_config = vim.tbl_deep_extend('force', DEFAULT_OPTIONS, options)
@@ -68,17 +84,21 @@ function nomodoro.status()
     local status_string = ""
     if state == RUNNING then
         if time_remaining_seconds(total_minutes, start_time) <= 0 then
+            state = DONE
             if is_work_time(total_minutes) then
                 status_string = vim.g.nomodoro.texts.on_work_complete
                 if not already_notified_end then
                     vim.g.nomodoro.on_work_complete()
                     already_notified_end = true
+                    nomodoro.show_menu(2 + (nomodoro.is_short_break() and 0 or 1))
                 end
             else
                 status_string = vim.g.nomodoro.texts.on_break_complete
                 if not already_notified_end then
                     vim.g.nomodoro.on_break_complete()
                     already_notified_end = true
+                    vim.g.break_count = vim.g.break_count + 1
+                    nomodoro.show_menu()
                 end
 
             end
@@ -93,8 +113,8 @@ function nomodoro.stop()
     state = DONE
 end
 
-function nomodoro.show_menu()
-    menu.show(nomodoro)
+function nomodoro.show_menu(focus_line)
+    menu.show(nomodoro, focus_line)
 end
 
 -- Expose commands
@@ -104,7 +124,7 @@ command("NomoWork", function ()
 end, {})
 
 command("NomoBreak", function ()
-    nomodoro.start(vim.g.nomodoro.break_time)
+    nomodoro.start_break()
 end, {})
 
 command("NomoStop", function ()
