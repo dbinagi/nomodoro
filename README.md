@@ -60,6 +60,8 @@ require('nomodoro').setup({
 | NomoStop | Stop all timers |
 | NomoStatus | Print time left manually |
 | NomoTimer N | Runs a timer for N minutes |
+| NomoPause | Pauses current timer |
+| NomoContinue | Resumes current timer |
 
 # Configure keys
 
@@ -97,3 +99,11 @@ lualine.setup({
 If you like menus, you can install the dependency nui.menu and you will have enable a command `NomoMenu` to display options in a popup
 
 ![menu](assets/menu.png)
+
+# Contributions
+
+Contributions are more than welcome! Thanks to:
+
+@gaardhus
+@nfwyst
+

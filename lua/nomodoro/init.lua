@@ -169,7 +169,15 @@ command("NomoWork", function ()
 end, {})
 
 command("NomoPause", function ()
-	nomodoro.pause()
+    if nomodoro.is_running() then
+        nomodoro.pause()
+    end
+end, {})
+
+command("NomoContinue", function ()
+    if nomodoro.is_pause() then
+        nomodoro.continue()
+    end
 end, {})
 
 command("NomoBreak", function ()
