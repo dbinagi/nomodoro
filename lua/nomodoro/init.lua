@@ -13,6 +13,7 @@ local total_minutes = 0
 
 local DONE = 0
 local RUNNING = 1
+local PAUSE = 2
 local state = DONE
 
 local already_notified_end = false
@@ -38,8 +39,21 @@ local DEFAULT_OPTIONS = {
 
 -- Local functions
 
+local previous_time_remaining = nil
+local new_start = nil
 local function time_remaining_seconds(duration, start)
-    return duration * 60 - os.difftime(os.time(), start)
+    if state == PAUSE then
+      if not previous_time_remaining then
+        previous_time_remaining = duration * 60 - os.difftime(os.time(), new_start or start)
+        new_start = nil
+      end
+      return previous_time_remaining
+    end
+    if previous_time_remaining and not new_start then
+      new_start = os.difftime(os.time(), duration * 60 - previous_time_remaining)
+      previous_time_remaining = nil
+    end
+    return duration * 60 - os.difftime(os.time(), new_start or start)
 end
 
 local function time_remaining(duration, start)
@@ -62,6 +76,22 @@ function nomodoro.start(minutes)
     state = RUNNING
 end
 
+function nomodoro.pause()
+  state = PAUSE
+end
+
+function nomodoro.continue()
+  state = RUNNING
+end
+
+function nomodoro.is_pause()
+  return state == PAUSE
+end
+
+function nomodoro.is_running()
+  return state == RUNNING
+end
+
 function nomodoro.start_break()
     if nomodoro.is_short_break() then
         nomodoro.start(vim.g.nomodoro.short_break_time)
@@ -80,9 +110,19 @@ function nomodoro.setup(options)
     menu.has_dependencies = new_config.menu_available
 end
 
+local previous_status = nil
 function nomodoro.status()
     local status_string = ""
-    if state == RUNNING then
+
+    if previous_status then
+      if nomodoro.is_pause() then
+        return previous_status
+      else
+        previous_status = nil
+      end
+    end
+
+    if nomodoro.is_running() or nomodoro.is_pause() then
         if time_remaining_seconds(total_minutes, start_time) <= 0 then
             state = DONE
             if is_work_time(total_minutes) then
@@ -106,6 +146,11 @@ function nomodoro.status()
             status_string = vim.g.nomodoro.texts.status_icon .. time_remaining(total_minutes, start_time)
         end
     end
+
+    if nomodoro.is_pause() then
+      previous_status = status_string
+    end
+
     return status_string
 end
 
@@ -121,6 +166,10 @@ end
 
 command("NomoWork", function ()
 	nomodoro.start(vim.g.nomodoro.work_time)
+end, {})
+
+command("NomoPause", function ()
+	nomodoro.pause()
 end, {})
 
 command("NomoBreak", function ()

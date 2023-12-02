@@ -71,13 +71,18 @@ local function show(nomodoro, focus_line)
                 nomodoro.start(vim.g.nomodoro.long_break_time)
             elseif item.text == 'Stop' then
                 nomodoro.stop()
+            elseif item.text == "Continue" then
+                nomodoro.continue()
+            elseif item.text == "Pause" then
+                nomodoro.pause()
             end
         end
     }
-    local status_ = nomodoro.status()
 
-    if status_ ~= "" then
+    if nomodoro.is_pause() then
         table.insert(menu_options.lines, 1, Menu.item('Continue'))
+    elseif nomodoro.is_running() then
+        table.insert(menu_options.lines, 1, Menu.item('Pause'))
     end
 
     local menu = Menu(popup_options, menu_options)
